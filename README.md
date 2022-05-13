@@ -26,7 +26,7 @@ config_path = "/tmp/kubeconfig"
 
 Then, from the CLI :
 ```sh
-terraform init -backend-config="key=misp" -backend-config="bucket=$(STATE_STORAGE_BUCKET)" -backend-config="region=$(STATE_STORAGE_REGION)"
+terraform init
 terraform plan -var-file=prod.tfvars -input=false -out=plan.tfplan
 terraform apply --auto-approve -input=false plan.tfplan
 ```
