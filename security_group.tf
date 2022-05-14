@@ -8,6 +8,6 @@ data "aws_security_groups" "k8s_sg" {
 data "aws_security_group" "eks_node_ext" {
   filter {
     name = "tag:Name"
-    values = ["${var.k8s_cluster_name}-node-ext-sg"]
+    values = ["${var.eks_cluster_name}-node-ext-sg"]
   }
 }

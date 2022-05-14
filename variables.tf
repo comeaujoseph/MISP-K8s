@@ -1,20 +1,34 @@
-variable "k8s_cluster_name" {
+# !! EKS Cluster Information
+
+variable "EKS_cluster_name" {
+  description = "Name of the EKS cluster created via eksctl"
   type    = "string"
+  default = "atg-useast2"
 }
 
 variable "route53_zone" {
   type    = "string"
 }
 
-variable "MYSQL_DATABASE" {
+# !! MISP Database !!
+variable "MISP_database_name" {
+  type    = "string"
+  default = "misp"
+}
+variable "MISP_database_user" {
+  type    = "string"
+  default = "misp"
+}
+variable "MISP_database_root_psswd" {
   type    = "string"
 }
-variable "MYSQL_USER" {
-  type    = "string"
+variable "MISP_database_size" {
+  description = "Default size for the MISP MySQL Database"
+  type = "number"
+  default = 20
 }
-variable "MYSQL_ROOT_PASSWORD" {
-  type    = "string"
-}
+
+
 variable "MISP_ADMIN_EMAIL" {
   type    = "string"
 }
@@ -43,6 +57,4 @@ variable "authorized_ips" {
   type = string
 }
 
-variable "size_db" {
-  type = "number"
-}
+
