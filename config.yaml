@@ -1,0 +1,15 @@
+network:
+  hosted_zone: atgdev.aws.cudaops.com
+  cname:
+    api: misp
+    dashboard: portal.misp
+dashboard:
+  ports:
+    internal: 8001
+    external: 80
+app:
+  ports:
+    internal: 80
+    external: 80
+  zmq:
+    port: 50000

@@ -1,54 +1,47 @@
-# Mapping for ports
-locals {
-  internal_misp_port = 80
-  external_misp_port = 80
-  zmq_internal_port = 50000
-}
-
 # Kubernetes Deployment for misp-dashboard
 # Include the container configuration
-resource "kubernetes_deployment" "misp" {
+resource "kubernetes_deployment" "MISP" {
   metadata {
-    name = "${local.k8s_misp_internal_name}"
+    name = "${local.config.network.cname.api}"
     labels = {
-      app = "${local.k8s_misp_internal_name}"
+      app = "${local.config.network.cname.api}"
     }
   }
   spec {
     selector {
         match_labels = {
-            app = "${local.k8s_misp_internal_name}"
+            app = "${local.config.network.cname.api}"
         }
     }
     template {
       metadata {
-        name = "${local.k8s_misp_internal_name}"
+        name = "${local.config.network.cname.api}"
         labels = {
-          app = "${local.k8s_misp_internal_name}"
+          app = "${local.config.network.cname.api}"
         }
       }
       spec {
         container {
           image = "xyrodileas/misp:latest"
-          name  = "${local.k8s_misp_internal_name}"
+          name  = "${local.config.network.cname.api}"
           port {
-            container_port = "${local.internal_misp_port}"
+            container_port = "${local.config.app.ports.internal}"
           }
           env {
               name = "MYSQL_HOST"
-              value = "${aws_db_instance.misp_db.address}"
+              value = "${aws_db_instance.MISP_Database.address}"
           }
           env {
               name  = "MYSQL_DATABASE"
-              value = "${aws_db_instance.misp_db.name}"
+              value = "${aws_db_instance.MISP_Database.name}"
           }
           env {
               name  = "MYSQL_USER"
-              value = "${aws_db_instance.misp_db.username}"
+              value = "${aws_db_instance.MISP_Database.username}"
           }
           env {
               name  = "MYSQL_PASSWORD"
-              value = "${random_password.password_misp.result}"
+              value = "${random_password.MISP_database_psswd.result}"
           }
           env {
               name  = "MISP_ADMIN_EMAIL"
@@ -81,17 +74,17 @@ resource "kubernetes_deployment" "misp" {
 
 # Kubernetes Service configuration
 # Configure the port mapping between container and ingress point for MISP
-resource "kubernetes_service" "misp" {
+resource "kubernetes_service" "MISP" {
   metadata {
-    name = "${local.k8s_misp_internal_name}-service"
+    name = "${local.config.network.cname.api}-service"
   }
   spec {
     selector = {
-      app = "${kubernetes_deployment.misp.metadata.0.labels.app}"
+      app = "${kubernetes_deployment.MISP.metadata.0.labels.app}"
     }
     port {
-      port = "${local.external_misp_port}"
-      target_port = "${local.internal_misp_port}"
+      port = "${local.config.app.ports.external}"
+      target_port = "${local.config.app.ports.internal}"
     }
     type= "NodePort"
   }
@@ -99,17 +92,17 @@ resource "kubernetes_service" "misp" {
 
 # Kubernetes Service configuration
 # Configure the port mapping between container and ingress point for the ZMQ service
-resource "kubernetes_service" "misp-zmq" {
+resource "kubernetes_service" "MISP_ZMQ" {
   metadata {
-    name = "${local.k8s_misp_internal_name}-zmq"
+    name = "${local.config.network.cname.api}-zmq"
   }
   spec {
     selector = {
-      app = "${kubernetes_deployment.misp.metadata.0.labels.app}"
+      app = "${kubernetes_deployment.MISP.metadata.0.labels.app}"
     }
     port {
-      port = "${local.zmq_internal_port}"
-      target_port = "${local.zmq_internal_port}"
+      port = "${local.config.app.zmq.port}"
+      target_port = "${local.config.app.zmq.port}"
     }
     type= "NodePort"
   }
@@ -120,7 +113,7 @@ resource "kubernetes_service" "misp-zmq" {
 # var.authorized_ips is used to whitelist IP.
 resource "kubernetes_ingress" "misp_ingress" {
   metadata {
-    name = "${local.k8s_misp_internal_name}-ingress"
+    name = "${local.config.network.cname.api}-ingress"
     annotations = {
       "kubernetes.io/ingress.class" = "alb"
       "alb.ingress.kubernetes.io/scheme" = "internet-facing"
@@ -144,8 +137,8 @@ resource "kubernetes_ingress" "misp_ingress" {
         }
         path {
           backend {
-            service_name = "${kubernetes_service.misp.metadata.0.name}"
-            service_port = "${local.external_misp_port}"
+            service_name = "${kubernetes_service.MISP.metadata.0.name}"
+            service_port = "${local.config.app.ports.external}"
           }
         }
       }

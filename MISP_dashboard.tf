@@ -1,57 +1,51 @@
-# Mapping for ports
-locals {
-  internal_misp_dashboard_port = 8001
-  external_misp_dashboard_port = 80
-}
-
 # Kubernetes Deployment for misp-dashboard
 # Include the container configuration
-resource "kubernetes_deployment" "misp_dashboard" {
+resource "kubernetes_deployment" "MISP_Dashboard" {
   metadata {
-    name = "${local.k8s_misp_dashboard_internal_name}"
+    name = "${local.config.network.cname.dashboard}"
     labels = {
-      app = "${local.k8s_misp_dashboard_internal_name}"
+      app = "${local.config.network.cname.dashboard}"
     }
   }
   spec {
     selector {
         match_labels = {
-            app = "${local.k8s_misp_dashboard_internal_name}"
+            app = "${local.config.network.cname.dashboard}"
         }
     }
     template {
       metadata {
-        name = "${local.k8s_misp_dashboard_internal_name}"
+        name = "${local.config.network.cname.dashboard}"
         labels = {
-          app = "${local.k8s_misp_dashboard_internal_name}"
+          app = "${local.config.network.cname.dashboard}"
         }
       }
       spec {
         container {
           image = "xyrodileas/misp-dashboard:latest"
-          name  = "${local.k8s_misp_dashboard_internal_name}"
+          name  = "${local.config.network.cname.dashboard}"
           port {
-            container_port = "${local.internal_misp_dashboard_port}"
+            container_port = "${local.config.dashboard.ports.internal}"
           }
           env {
               name = "REDISHOST"
-              value = "${aws_elasticache_replication_group.redis_misp.primary_endpoint_address}"
+              value = "${aws_elasticache_replication_group.MISP_Redis.primary_endpoint_address}"
           }
           env {
               name  = "REDISPORT"
-              value = "${aws_elasticache_replication_group.redis_misp.port}"
+              value = "${aws_elasticache_replication_group.MISP_Redis.port}"
           }
           env {
               name  = "MISP_URL"
-              value = "${kubernetes_service.misp.metadata[0].name}"
+              value = "${kubernetes_service.MISP.metadata[0].name}"
           }
           env {
               name  = "ZMQ_URL"
-              value = "${kubernetes_service.misp-zmq.metadata[0].name}"
+              value = "${kubernetes_service.MISP_ZMQ.metadata[0].name}"
           }
           env {
               name  = "ZMQ_PORT"
-              value = "${local.zmq_internal_port}"
+              value = "${local.config.app.zmq.port}"
           }
 
         }
@@ -63,17 +57,17 @@ resource "kubernetes_deployment" "misp_dashboard" {
 
 # Kubernetes Service configuration
 # Configure the port mapping between container and ingress point for the dashboard
-resource "kubernetes_service" "misp_dashboard" {
+resource "kubernetes_service" "MISP_Dashboard" {
   metadata {
-    name = "${local.k8s_misp_dashboard_internal_name}-service"
+    name = "${local.config.network.cname.dashboard}-service"
   }
   spec {
     selector = {
-      app = "${kubernetes_deployment.misp_dashboard.metadata.0.labels.app}"
+      app = "${kubernetes_deployment.MISP_Dashboard.metadata.0.labels.app}"
     }
     port {
-      port = "${local.external_misp_dashboard_port}"
-      target_port = "${local.internal_misp_dashboard_port}"
+      port = "${local.config.dashboard.ports.external}"
+      target_port = "${local.config.dashboard.ports.internal}"
     }
     type= "NodePort"
   }
@@ -84,7 +78,7 @@ resource "kubernetes_service" "misp_dashboard" {
 # var.authorized_ips is used to whitelist IP.
 resource "kubernetes_ingress" "misp_dashboard_ingress" {
   metadata {
-    name = "${local.k8s_misp_dashboard_internal_name}-ingress"
+    name = "${local.config.network.cname.dashboard}-ingress"
     annotations = {
       "kubernetes.io/ingress.class" = "alb"
       "alb.ingress.kubernetes.io/scheme" = "internet-facing"
@@ -108,8 +102,8 @@ resource "kubernetes_ingress" "misp_dashboard_ingress" {
         }
         path {
           backend {
-            service_name = "${kubernetes_service.misp_dashboard.metadata.0.name}"
-            service_port = "${local.external_misp_dashboard_port}"
+            service_name = "${kubernetes_service.MISP_Dashboard.metadata.0.name}"
+            service_port = "${local.config.dashboard.ports.external}"
           }
         }
       }
